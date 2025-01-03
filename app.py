@@ -36,6 +36,9 @@ with col1.container(height=300,border=True):
 
 col2.subheader("Image Analysis")
 
+boxes = []
+segments = []
+
 with col2.container(height=300,border=True):
     if uploaded_file:
         img = Image.open(uploaded_file)
@@ -53,6 +56,28 @@ with col2.container(height=300,border=True):
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         
         st.image(img)
+
+
+if len(boxes) > 0:
+    cm2_per_pix2 = None
+    for x1, y1, x2, y2, conf, cl in boxes:
+        if cl == 1:
+            size_pixel = (x2-x1)*(y2-y1)
+            cm2_per_pix2 = 1.0/size_pixel 
+              
+
+    for x1, y1, x2, y2, conf, cl in boxes:
+        info = f"{model.classes[cl]}, "
+        info += f"confidence: {conf}, "
+        info += f"position: ({x1,y1}), "
+        info += f"size pixel: ({(x2-x1)*(y2-y1)}) "
+        
+        if cm2_per_pix2 != None:
+            info += f"size cm2: ({(x2-x1)*(y2-y1)*cm2_per_pix2})" 
+        
+        st.text(info)
+
+    # st.header("Result:")
     
 
 
