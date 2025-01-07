@@ -3,6 +3,7 @@ from PIL import Image
 import numpy as np
 import cv2
 from model import YOLO
+import pandas as pd
 
 model = YOLO("weights.onnx")
 
@@ -59,25 +60,37 @@ with col2.container(height=300,border=True):
 
 
 if len(boxes) > 0:
+    st.subheader("Result")
+
+
+    # create columns
     cm2_per_pix2 = None
     for x1, y1, x2, y2, conf, cl in boxes:
         if cl == 1:
             size_pixel = (x2-x1)*(y2-y1)
             cm2_per_pix2 = 1.0/size_pixel 
-              
+
+    columns = ["class","confidence","position","size (pixel\u00b2)"]
+    
+    if cm2_per_pix2 != None:
+        columns.append("size (cm\u00b2)")
+    
+    
+    # create data frame
+    data = pd.DataFrame(columns=columns)
 
     for x1, y1, x2, y2, conf, cl in boxes:
-        info = f"{model.classes[cl]}, "
-        info += f"confidence: {conf}, "
-        info += f"position: ({x1,y1}), "
-        info += f"size pixel: ({(x2-x1)*(y2-y1)}) "
+        box_info = [model.classes[cl],round(conf,3),(round(x1,3),round(y1,3)),round((x2-x1)*(y2-y1),3)]
         
         if cm2_per_pix2 != None:
-            info += f"size cm2: ({(x2-x1)*(y2-y1)*cm2_per_pix2})" 
-        
-        st.text(info)
+            box_info.append(round((x2-x1)*(y2-y1) * cm2_per_pix2),3)
 
-    # st.header("Result:")
+        box_data = pd.DataFrame([box_info],columns=columns)
+        
+        data = pd.concat([data, box_data])
+    
+    st.dataframe(data, hide_index=True)
+
     
 
 
